@@ -1,0 +1,27 @@
+---
+# tasks file for ca_certificates
+- name: "Fail for unsupported OS"
+  when: "ansible_facts.os_family not in ca_certificates_os_trust_paths"
+  ansible.builtin.fail:
+    msg: "{{ ansible_facts.os_family }} is not known to this role. Please update ca_certificates_os_trust_paths with the CA trust path for this OS"
+
+- name: Remove CA certificate
+  ansible.builtin.file:
+    path: "{{ ca_certificates_os_trust_paths[ansible_facts.os_family] }}/{{ item }}"
+    state: absent
+  loop: "{{ ca_certificates_absent }}"
+  notify: Update CA certificates
+  become: true
+  become_user: root
+
+- name: Install CA certificate
+  ansible.builtin.copy:
+    dest: "{{ ca_certificates_os_trust_paths[ansible_facts.os_family] }}/{{ item.name }}"
+    content: "{{ item.content }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ ca_certificates_present }}"
+  notify: Update CA certificates
+  become: true
+  become_user: root

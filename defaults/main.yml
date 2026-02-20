@@ -1,0 +1,5 @@
+---
+# defaults file for ca_certificates
+
+ca_certificates_absent: []
+ca_certificates_present: []
