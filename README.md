@@ -9,7 +9,7 @@ Role Variables
 | Name                          | Comment                                                      | Default value |
 | ----------------------------- | ------------------------------------------------------------ | ------------- |
 | ca_certificates_absent        | A list of certificates to be absent.                         | `[]`          |
-| ca_certificates_desktop_users | A list of                                                    |               |
+| ca_certificates_desktop_users | A list of desktop users the cert should be added to nssdb.   |               |
 | ca_certificates_present       | A list of certificates to be present. See the example below. | `[]`          |
 
 Each element of `ca_certificates_present` needs the following fields:
