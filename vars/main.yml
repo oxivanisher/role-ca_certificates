@@ -3,3 +3,8 @@ ca_certificates_os_trust_paths:
   Debian: "/usr/local/share/ca-certificates"
   Suse: "/usr/share/pki/trust/anchors"
   RedHat: "/usr/share/pki/ca-trust-source"
+
+ca_certificates_nssdb_packages:
+  Debian: libnss3-tools
+  RedHat: nss-tools
+  Suse: mozilla-nss-tools

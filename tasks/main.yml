@@ -25,3 +25,17 @@
   notify: Update CA certificates
   become: true
   become_user: root
+
+- name: Install nss tools for nssdb management
+  ansible.builtin.package:
+    name: "{{ ca_certificates_nssdb_packages[ansible_facts.os_family] }}"
+    state: present
+  when: ca_certificates_desktop_users | length > 0
+  become: true
+  become_user: root
+
+- name: "Manage CA certificates in nssdb for desktop users"
+  ansible.builtin.include_tasks: nssdb_user_certs.yml
+  loop: "{{ ca_certificates_desktop_users }}"
+  loop_control:
+    loop_var: nssdb_user

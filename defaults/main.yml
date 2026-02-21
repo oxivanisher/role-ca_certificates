@@ -3,3 +3,4 @@
 
 ca_certificates_absent: []
 ca_certificates_present: []
+ca_certificates_desktop_users: []

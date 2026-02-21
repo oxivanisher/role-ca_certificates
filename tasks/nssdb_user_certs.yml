@@ -1,0 +1,43 @@
+---
+- name: "Get home directory for {{ nssdb_user }}"
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ nssdb_user }}"
+
+- name: "Set nssdb home fact for {{ nssdb_user }}"
+  ansible.builtin.set_fact:
+    nssdb_home: "{{ ansible_facts.getent_passwd[nssdb_user][4] }}"
+
+- name: "Ensure ~/.pki/nssdb exists for {{ nssdb_user }}"
+  ansible.builtin.file:
+    path: "{{ nssdb_home }}/.pki/nssdb"
+    state: directory
+    mode: '0700'
+  become: true
+  become_user: "{{ nssdb_user }}"
+
+- name: "Check if nssdb is initialized for {{ nssdb_user }}"
+  ansible.builtin.stat:
+    path: "{{ nssdb_home }}/.pki/nssdb/cert9.db"
+  register: nssdb_cert9_db
+  become: true
+  become_user: "{{ nssdb_user }}"
+
+- name: "Initialize nssdb for {{ nssdb_user }}"
+  ansible.builtin.command:
+    argv:
+      - certutil
+      - -N
+      - --empty-password
+      - -d
+      - "sql:{{ nssdb_home }}/.pki/nssdb"
+  when: not nssdb_cert9_db.stat.exists
+  changed_when: true
+  become: true
+  become_user: "{{ nssdb_user }}"
+
+- name: "Manage certificates in nssdb for {{ nssdb_user }}"
+  ansible.builtin.include_tasks: nssdb_cert.yml
+  loop: "{{ ca_certificates_present }}"
+  loop_control:
+    loop_var: nssdb_cert

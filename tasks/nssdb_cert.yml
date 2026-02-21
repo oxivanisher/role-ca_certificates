@@ -1,0 +1,52 @@
+---
+- name: "Export cert from nssdb if present {{ nssdb_user ~ ':' ~ nssdb_cert.name }}"
+  ansible.builtin.command:
+    argv:
+      - certutil
+      - -L
+      - -d
+      - "sql:{{ nssdb_home }}/.pki/nssdb"
+      - -n
+      - "{{ nssdb_cert.name }}"
+      - -a
+  register: nssdb_cert_current
+  changed_when: false
+  failed_when: false
+  become: true
+  become_user: "{{ nssdb_user }}"
+
+- name: "Remove outdated cert from nssdb {{ nssdb_user ~ ':' ~ nssdb_cert.name }}"
+  ansible.builtin.command:
+    argv:
+      - certutil
+      - -D
+      - -d
+      - "sql:{{ nssdb_home }}/.pki/nssdb"
+      - -n
+      - "{{ nssdb_cert.name }}"
+  when:
+    - nssdb_cert_current.rc == 0
+    - nssdb_cert_current.stdout | trim != nssdb_cert.content | trim
+  changed_when: true
+  become: true
+  become_user: "{{ nssdb_user }}"
+
+- name: "Add cert to nssdb {{ nssdb_user ~ ':' ~ nssdb_cert.name }}"
+  ansible.builtin.command:
+    argv:
+      - certutil
+      - -A
+      - -d
+      - "sql:{{ nssdb_home }}/.pki/nssdb"
+      - -n
+      - "{{ nssdb_cert.name }}"
+      - -t
+      - "CT,,"
+      - -i
+      - "{{ ca_certificates_os_trust_paths[ansible_facts.os_family] }}/{{ nssdb_cert.name }}"
+  when: >
+    nssdb_cert_current.rc != 0 or
+    nssdb_cert_current.stdout | trim != nssdb_cert.content | trim
+  changed_when: true
+  become: true
+  become_user: "{{ nssdb_user }}"
