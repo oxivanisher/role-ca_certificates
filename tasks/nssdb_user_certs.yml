@@ -12,7 +12,7 @@
   ansible.builtin.file:
     path: "{{ nssdb_home }}/.pki/nssdb"
     state: directory
-    mode: '0700'
+    mode: "0700"
   become: true
   become_user: "{{ nssdb_user }}"
 
