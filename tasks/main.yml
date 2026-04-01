@@ -12,7 +12,6 @@
   loop: "{{ ca_certificates_absent }}"
   notify: Update CA certificates
   become: true
-  become_user: root
 
 - name: Install CA certificate
   ansible.builtin.copy:
@@ -20,11 +19,10 @@
     content: "{{ item.content }}"
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
   loop: "{{ ca_certificates_present }}"
   notify: Update CA certificates
   become: true
-  become_user: root
 
 - name: Install nss tools for nssdb management
   ansible.builtin.package:
@@ -32,7 +30,6 @@
     state: present
   when: ca_certificates_desktop_users | length > 0
   become: true
-  become_user: root
 
 - name: "Manage CA certificates in nssdb for desktop users"
   ansible.builtin.include_tasks: nssdb_user_certs.yml
