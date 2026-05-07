@@ -9,11 +9,38 @@
       - -n
       - "{{ nssdb_cert.name }}"
       - -a
-  register: nssdb_cert_current
+  register: nssdb_cert_pem
   changed_when: false
   failed_when: false
   become: true
   become_user: "{{ nssdb_user }}"
+
+- name: "Get fingerprint of cert in nssdb {{ nssdb_user ~ ':' ~ nssdb_cert.name }}"
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - x509
+      - -fingerprint
+      - -sha256
+      - -noout
+    stdin: "{{ nssdb_cert_pem.stdout }}"
+  register: nssdb_cert_fingerprint
+  changed_when: false
+  failed_when: false
+  when: nssdb_cert_pem.rc == 0
+
+- name: "Get fingerprint of expected cert {{ nssdb_cert.name }}"
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - x509
+      - -in
+      - "{{ ca_certificates_os_trust_paths[ansible_facts.os_family] }}/{{ nssdb_cert.name }}"
+      - -fingerprint
+      - -sha256
+      - -noout
+  register: expected_cert_fingerprint
+  changed_when: false
 
 - name: "Remove outdated cert from nssdb {{ nssdb_user ~ ':' ~ nssdb_cert.name }}"
   ansible.builtin.command:
@@ -25,8 +52,8 @@
       - -n
       - "{{ nssdb_cert.name }}"
   when:
-    - nssdb_cert_current.rc == 0
-    - nssdb_cert_current.stdout | trim != nssdb_cert.content | trim
+    - nssdb_cert_pem.rc == 0
+    - nssdb_cert_fingerprint.stdout | trim != expected_cert_fingerprint.stdout | trim
   changed_when: true
   become: true
   become_user: "{{ nssdb_user }}"
@@ -45,8 +72,8 @@
       - -i
       - "{{ ca_certificates_os_trust_paths[ansible_facts.os_family] }}/{{ nssdb_cert.name }}"
   when: >
-    nssdb_cert_current.rc != 0 or
-    nssdb_cert_current.stdout | trim != nssdb_cert.content | trim
+    nssdb_cert_pem.rc != 0 or
+    nssdb_cert_fingerprint.stdout | trim != expected_cert_fingerprint.stdout | trim
   changed_when: true
   become: true
   become_user: "{{ nssdb_user }}"
